@@ -3,6 +3,8 @@ import './App.css';
 import Navigation from './components/Navigation/Navigation';
 import Clarifai from 'clarifai';
 import Logo from './components/Logo/Logo';
+import Signin from './components/Signin/Signin';
+import Register from './components/Register/Register';
 import Rank from './components/Rank/Rank';
 import ImageLinkForm from './components/ImageLinkForm/ImageLinkForm';
 import Particles from 'react-particles-js';
@@ -33,8 +35,29 @@ class App extends Component {
 
     this.state = {
       input: '',
-      imageUrl : ''
+      imageUrl : '',
+      box: {},
+      route: 'signin',
+      isSignedIn: false
     }
+  }
+
+  calculateFaceLocation = (data) => {
+    const clarifaiFace = data.outputs[0].data.regions[0].region_info.bounding_box;
+    const image = document.getElementById('inputimage');
+    const width = Number(image.width);
+    const height = Number(image.height);
+    return {
+      leftCol: clarifaiFace.left_col * width,
+      topRow: clarifaiFace.top_row * height,
+      rightCol: width - (clarifaiFace.right_col * width),
+      bottomRow: height - (clarifaiFace.bottom_row * height)
+    }
+  }
+
+  displayFaceBox = (box) => {
+    console.log(box);
+    this.setState({box: box});
   }
 
    onInputChange = (event) => {
@@ -58,37 +81,59 @@ class App extends Component {
         Clarifai.FACE_DETECT_MODEL,
         this.state.input)
       .then(response => {
-        console.log('hi', response.outputs[0].data)
+        // console.log('hi', response.outputs[0].data.regions[0].region_info.bounding_box)
         // if (response) {
-        //   fetch('http://localhost:3000/image', {
-        //     method: 'put',
-        //     headers: {'Content-Type': 'application/json'},
-        //     body: JSON.stringify({
-        //       id: this.state.user.id
-        //     })
-        //   })
-        //     .then(response => response.json())
-        //     .then(count => {
-        //       this.setState(Object.assign(this.state.user, { entries: count}))
-        //     })
+          // fetch('http://localhost:3000/image', {
+          //   method: 'put',
+          //   headers: {'Content-Type': 'application/json'},
+          //   body: JSON.stringify({
+          //     id: this.state.user.id
+          //   })
+          // })
+          //   .then(response => response.json())
+            // .then(count => {
+            //   this.setState(Object.assign(this.state.user, { entries: count}))
+            // })
 
         // }
-        // this.displayFaceBox(this.calculateFaceLocation(response))
+        this.displayFaceBox(this.calculateFaceLocation(response))
       })
-      // .catch(err => console.log(err));
+      .catch(err => console.log(err));
+  }
+
+  onRouteChange = (route) => {
+    if (route === 'home') {
+      this.setState({isSignedIn: true})
+    }else if (route === 'signout') {
+      this.setState({isSignedIn:false})
+    }
+    this.setState({route: route})
   }
 
   render () {
+
+    const { isSignedIn, route, input, imageUrl, box } = this.state;
+
     return (
     <div className="App">
       <Particles className="particles" 
-        params ={config}
-      />
-      <Navigation />
-      <Logo />
-      <Rank />
-      <ImageLinkForm onInputChange={this.onInputChange} onButtonPress={this.onButtonPress}/>
-      <ImageRecognition imageUrl={this.state.input}/>     
+        params ={config} />
+      <Navigation isSignedIn={isSignedIn} onRouteChange={this.onRouteChange}/>
+      {
+        route === 'home' ? 
+        <div> 
+            <Logo />
+            <Rank />
+            <ImageLinkForm onInputChange={this.onInputChange} onButtonPress={this.onButtonPress}/>
+            <ImageRecognition box={box} imageUrl={input}/>     
+        </div>
+        : (
+          route === 'signin' ? 
+          <Signin onRouteChange={this.onRouteChange} />
+          : 
+          <Register onRouteChange={this.onRouteChange} />
+        )
+      }
     </div>
     );
   }
