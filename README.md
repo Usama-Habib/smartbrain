@@ -1,4 +1,4 @@
-# Project is Live here https://usama-habib.github.io/smartbrain/
+Project is Live here https://usama-habib.github.io/smartbrain/
 
 
 # Getting Started with Create React App
